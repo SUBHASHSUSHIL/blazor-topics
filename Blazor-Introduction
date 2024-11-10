@@ -1,0 +1,22 @@
+#. Blazor:-
+-> Blazor ek framework hai jo .NET ke through web applications banane mein help karta hai, aur khaas baat ye hai ki ye C# aur Razor syntax ka istemal karta hai JavaScript ke bajaye. Iska main purpose ye hai ki developers C# language mein coding karke web applications bana sakte hain, bina JavaScript use kiye.
+
+#. Blazor ke Types:
+1. Blazor Server:-
+-> Ye server-side pe run hota hai aur browser aur server ke beech SignalR connection ke through communication hoti hai. Ismein app fast load hota hai, kyunki browser sirf HTML aur CSS render karta hai.
+
+2. Blazor WebAssembly (WASM):-
+-> Ismein application client-side pe run hota hai aur .NET code browser ke andar hi execute hota hai. Yaani ki JavaScript jaise hi, ye directly browser mein run hota hai bina kisi server ke.
+
+#. Blazor Use Karne ke Fayde:-
+1. Single Language Full Stack Development:-
+-> Agar aapko sirf C# aata hai, toh Blazor mein aap server aur client-side dono ka kaam C# mein hi kar sakte hain, bina JavaScript seekhe.
+
+2. Reusability:-
+-> Aap ek hi C# code ko client aur server-side components mein reuse kar sakte hain, jisse development faster aur easier ho jaata hai.
+
+3. Fast Development:-
+-> Blazor Razor components ka use karta hai, jisse re-render aur updates fast hote hain, aur .NET libraries ke support ke saath kaafi functionalities easily implement hoti hain.
+
+4. Integration with .NET Ecosystem:-
+-> Blazor .NET ke saath tightly integrated hai, jisse authentication, authorization, APIs, aur dependency injection jese features ko use karna asaan ho jaata hai.
