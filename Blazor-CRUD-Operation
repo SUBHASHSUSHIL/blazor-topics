@@ -1,0 +1,495 @@
+#. Full Crud Operation:-
+1.Create Project-> Blank Solution.
+                      1.ASP.NETCoreWebAPI.
+                      2.Class Library.
+                      3.Blazor WebAssembly Standalone App.
+1.Class Library:-
+=> Student Class.
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BlazorCrud.Library
+{
+    public class Student
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Please enter your name.")]
+        public string Name { get; set; }
+
+        [Required(ErrorMessage = "Please enter your FatherName.")]
+        public string FatherName { get; set; }
+
+        [Required(ErrorMessage = "Please enter your Number. ")]
+        public string MobileNumber { get; set; }
+
+        [Required(ErrorMessage = "Please enter your Semester.")]
+        [Range(1,8, ErrorMessage = "Please enter valid Semester 1 - 8")]
+        public string Semester { get; set; }
+
+        [Required(ErrorMessage = "Please enter your Email.")]
+        [EmailAddress(ErrorMessage = "Please enter valid Email Address.")]
+        public string Email {  get; set; }
+
+        [Required(ErrorMessage = "Please enter your RollNo.")]
+        public int RollNo { get; set; }
+
+    }
+}
+---------------------------------------------------------------------------------------------------------------
+2.ASP.NETCoreWebAPI:-
+=> Download Package.
+-><Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.6" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorCrud.Library\BlazorCrud.Library.csproj" />
+  </ItemGroup>
+
+</Project>
+
+#.AppSetting.json:-
+->{
+  "ConnectionStrings": {
+    "dbcs": "Server=DESKTOP\\SQLEXPRESS;Database=dbBlazorCruds;Trusted_Connection=True;Encrypt=false"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+
+#.Program.cs:-
+=>using BlazorCrud.API.Data;
+using Microsoft.Build.Framework;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using Microsoft.Identity.Client.Advanced;
+using Microsoft.Identity.Client.Extensibility;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var ConnectionString = builder.Configuration.GetConnectionString("dbcs");
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(ConnectionString));
+
+builder.Services.AddCors(options => options.AddPolicy("BlazorCrudPolicy", policyBuilder =>
+{
+    policyBuilder.WithOrigins("https://localhost:7292");
+    policyBuilder.AllowAnyHeader();
+    policyBuilder.AllowAnyMethod();
+}));
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseCors("BlazorCrudPolicy");
+app.UseHttpsRedirection();
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
+
+#.Data:-
+->ApplicationDbContext.
+using BlazorCrud.Library;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BlazorCrud.API.Data
+{
+    public class ApplicationDbContext : DbContext
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        {
+            
+        }
+
+        public DbSet<Student> tblStudents { get; set; }
+    }
+}
+
+
+=>Migration.
+1.Add-Migration 'InitialCatalog'
+2.Update-Database
+
+#.Controller:-
+=>using BlazorCrud.API.Data;
+using BlazorCrud.Library;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+
+namespace BlazorCrud.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StudentController : ControllerBase
+    {
+        private readonly ApplicationDbContext _context;
+
+        public StudentController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            var std = await _context.tblStudents.ToListAsync();
+            return Ok(std);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(int id)
+        {
+            var std = await _context.tblStudents.FindAsync(id);
+            return Ok(std);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] Student student)
+        {
+            await _context.tblStudents.AddAsync(student);
+            await _context.SaveChangesAsync();
+            return Ok("Create Successfully...");
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Edit(Student student)
+        {
+            if (student == null || student.Id < 1)
+            {
+                return BadRequest("Invalid data.");
+            }
+
+            try
+            {
+                var std = await _context.tblStudents.FindAsync(student.Id);
+
+                if (std == null)
+                {
+                    return NotFound();
+                }
+
+                std.Name = student.Name;
+                std.FatherName = student.FatherName;
+                std.MobileNumber = student.MobileNumber;
+                std.Semester = student.Semester;
+                std.Email = student.Email;
+                std.RollNo = student.RollNo;
+
+                _context.tblStudents.Update(std);
+                await _context.SaveChangesAsync();
+
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                return StatusCode(500, $"An error occurred while updating record: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var std = await _context.tblStudents.FindAsync(id);
+            _context.tblStudents.Remove(std);
+            await _context.SaveChangesAsync();
+            return Ok("Deleted Successfully...");
+        }
+    }
+}
+---------------------------------------------------------------------------------------------------
+3.Blazor WebAssembly Standalone App:-
+=>Package->
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.10" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BlazorCrud.Library\BlazorCrud.Library.csproj" />
+  </ItemGroup>
+
+</Project>
+
+#.Pages:-
+1.Student Details.
+=>@page "/StudentDetails"
+@using BlazorCrud.Library
+@inject HttpClient http
+@inject NavigationManager nav
+
+<h3>Student Details</h3>
+
+<div class="container">
+    <div class="row">
+        <div class="col-10">
+            @if (Student == null)
+            {
+                    <h2>Loading ...</h2>
+            }
+            else
+            {
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Father Name</th>
+                                <th scope="col">MobileNo</th>
+                                <th scope="col">Semester</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">RollNo</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Student)
+                        {
+                                    <tr>
+                                        <th scope="row">@item.Id</th>
+                                        <td>@item.Name</td>
+                                        <td>@item.FatherName</td>
+                                        <td>@item.MobileNumber</td>
+                                        <td>@item.Semester</td>
+                                        <td>@item.Email</td>
+                                        <td>@item.RollNo</td>
+                                        <td>
+                                                    <button onclick="@(()=>DeleteRecordAsync(item.Id))" class="btn btn-danger">Delete</button>
+                                        </td>
+                                        <td>
+                                                            <button onclick="@(()=>nav.NavigateTo($"EditStudent/{item.Id}"))" class="btn btn-primary">Edit</button>
+                                        </td>
+                                    </tr>
+                        }
+                        </tbody>
+                    </table>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public IEnumerable<Student> Student { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Student = await http.GetFromJsonAsync<IEnumerable<Student>>("https://localhost:7227/api/Student");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("The Error is :" + ex.ToString());
+        }
+    }
+
+    private async Task DeleteRecordAsync(int Id)
+    {
+        await http.DeleteAsync("https://localhost:7227/api/Student/" + Id);
+        nav.NavigateTo("/StudentDetails", true);
+
+    }
+}
+
+2.Create Student:-
+=>@page "/CreateStudent"
+@using BlazorCrud.Library
+@inject HttpClient http
+@inject NavigationManager nav
+
+<h3>Create Student</h3>
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <EditForm Model="Student" OnValidSubmit="CreateStudentMethod">
+                <DataAnnotationsValidator/>
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <InputText class="form-control" @bind-Value=Student.Name></InputText>
+                    <ValidationMessage For="@(() => Student.Name)"/>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Father's Name</label>
+                    <InputText class="form-control" @bind-Value=Student.FatherName></InputText>
+                    <ValidationMessage For="@(() => Student.FatherName)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Mobile</label>
+                    <InputText class="form-control" @bind-Value=Student.MobileNumber></InputText>
+                    <ValidationMessage For="@(() => Student.MobileNumber)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Semester</label>
+                    <InputText class="form-control" @bind-Value=Student.Semester></InputText>
+                    <ValidationMessage For="@(() => Student.Semester)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <InputText class="form-control" @bind-Value=Student.Email></InputText>
+                    <ValidationMessage For="@(() => Student.Email)" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">RollNo</label>
+                    <InputNumber class="form-control" @bind-Value=Student.RollNo></InputNumber>
+                    <ValidationMessage For="@(() => Student.RollNo)" />
+                </div>
+                <button class="btn btn-success mt-3" type="submit">Save</button>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    Student Student = new();
+
+    private void CreateStudentMethod()
+    {
+        http.PostAsJsonAsync("https://localhost:7227/api/Student", Student);
+        nav.NavigateTo("StudentDetails", true);
+    }
+}
+
+3.Edit Student:-
+=>@page "/EditStudent/{id:int}"
+@using BlazorCrud.Library
+@inject HttpClient http
+@inject NavigationManager nav
+
+<h3>Edit Student</h3>
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <EditForm Model="Student" OnValidSubmit="UpdateStudentMethod">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <InputText class="form-control" @bind-Value=Student.Name></InputText>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Father's Name</label>
+                    <InputText class="form-control" @bind-Value=Student.FatherName></InputText>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Mobile</label>
+                    <InputText class="form-control" @bind-Value=Student.MobileNumber></InputText>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Semester</label>
+                    <InputText class="form-control" @bind-Value=Student.Semester></InputText>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <InputText class="form-control" @bind-Value=Student.Email></InputText>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">RollNo</label>
+                    <InputNumber class="form-control" @bind-Value=Student.RollNo></InputNumber>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit">Update</button>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    Student Student = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Student = await http.GetFromJsonAsync<Student>($"https://localhost:7227/api/Student/{Id}");
+    }
+
+    private void UpdateStudentMethod()
+    {
+        http.PutAsJsonAsync<Student>($"https://localhost:7227/api/Student/{Student.Id}", Student);
+        nav.NavigateTo("/StudentDetails",true);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
